@@ -58,7 +58,7 @@ def filter_tender(tender: TenderData):
     ai_result = response.text
     print("✅ AI Analysis Complete!")
     
-    # डेटा को Supabase डेटाबेस में सेव करना
+    # डेटा को Supabase डेटाबेस में सेव करना (Safe mode)
     try:
         data_to_save = {
             "tender_id": tender.tender_id,
@@ -66,14 +66,15 @@ def filter_tender(tender: TenderData):
             "ai_decision": ai_result
         }
         supabase.table("tenders").insert(data_to_save).execute()
-        print("💾 Tender saved to Supabase Database successfully!")
+        db_status = "Saved successfully!"
     except Exception as e:
-        print(f"⚠️ Database Error: {e}")
+        print(f"⚠️ Database Warning: {e}")
+        db_status = "AI Processed (DB save skipped)"
     
     return {
         "tender_id": tender.tender_id,
         "ai_decision": ai_result,
-        "database_status": "Saved successfully!"
+        "database_status": db_status
     }
 
 # 3. PDF Upload & AI Analysis Endpoint
@@ -105,7 +106,7 @@ async def upload_tender_pdf(file: UploadFile = File(...)):
     response = model.generate_content(prompt)
     ai_result = response.text
     
-    # Supabase mein save karna
+    # Supabase mein save karna (Safe mode)
     try:
         data_to_save = {
             "tender_id": file.filename,
@@ -113,12 +114,13 @@ async def upload_tender_pdf(file: UploadFile = File(...)):
             "ai_decision": ai_result
         }
         supabase.table("tenders").insert(data_to_save).execute()
-        print("💾 PDF Tender saved to Supabase successfully!")
+        db_status = "PDF Processed & Saved to Supabase successfully!"
     except Exception as e:
-        print(f"⚠️ Database Error: {e}")
+        print(f"⚠️ Database Warning: {e}")
+        db_status = "PDF Processed by AI (DB save skipped)"
         
     return {
         "filename": file.filename,
         "ai_decision": ai_result,
-        "database_status": "PDF Processed & Saved successfully!"
+        "database_status": db_status
     }
