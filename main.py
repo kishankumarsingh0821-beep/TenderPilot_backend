@@ -6,7 +6,10 @@ import pypdf
 import io
 
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+# Gemini API configuration
+api_key = os.getenv("GEMINI_API_KEY")
+genai.configure(api_key=api_key)
 
 app = FastAPI()
 
@@ -26,13 +29,6 @@ async def upload_tender_pdf(file: UploadFile = File(...)):
         for page in pdf_reader.pages:
             extracted_text += page.extract_text() or ""
             
-        if not extracted_text.strip():
-            return {
-                "filename": file.filename,
-                "error": "PDF text is empty or it's a scanned image PDF. Please use a text-based PDF.",
-                "status": "Failed"
-            }
-            
         # Gemini AI se PDF text analyze karvana
         model = genai.GenerativeModel("gemini-1.5-flash")
         prompt = f"""
@@ -44,10 +40,11 @@ async def upload_tender_pdf(file: UploadFile = File(...)):
         Doosri line: 'Reason: [Yahan apna 1 line ka kaaran likho]'
 
         -- Tender Document Text --
-        {extracted_text[:4000]}
+        {extracted_text[:3000]}
         """
         
         response = model.generate_content(prompt)
+        
         return {
             "filename": file.filename,
             "ai_decision": response.text,
@@ -55,9 +52,9 @@ async def upload_tender_pdf(file: UploadFile = File(...)):
         }
         
     except Exception as e:
-        print(f"❌ Error occurred: {str(e)}")
+        print(f"❌ Exception caught: {str(e)}")
         return {
             "filename": file.filename,
-            "error": str(e),
+            "error_detail": str(e),
             "status": "Failed"
         }
